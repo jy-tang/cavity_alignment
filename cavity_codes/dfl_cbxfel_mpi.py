@@ -211,7 +211,7 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
                              nRoundtrips = 0,                     # recirculation params
                              delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
                              x1 = 0, x2 = 0,                   # displacement error of the two lenses
-                             readfilename = None, seedfilename = None, workdir = None, saveFilenamePrefix = None):        # read and write
+                             readfilename = None, workdir = None, saveFilenamePrefix = None):        # read and write
     
     t00 = time.time()
     
