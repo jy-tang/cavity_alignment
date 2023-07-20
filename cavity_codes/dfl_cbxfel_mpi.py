@@ -50,7 +50,9 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
                              l_cavity, l_undulator, w_cavity,  # cavity parameter
                              lambd_slice, kx_mesh, ky_mesh, xmesh, ymesh, #fld slice information
                              roundtripQ,               # recirculation parameter
-                             verboseQ): 
+                             delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
+                             x1 = 0, x2 = 0,                   # displacement error of the two lenses
+                             verboseQ = False):
     
     # propagate one slice around the cavity
     # take a slice in real space, unpadded, return a slice in real space, unpadded
@@ -94,7 +96,14 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     # reflect from M1
     fld_slice = np.einsum('i,ij->ij',R0H_slice,fld_slice)
     
-        
+    # Add yaw error of M1
+    if delta1 != 0:
+        M = 2* delta1 * 2*np.pi/lambd_slice
+        # ifft to the real space
+        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
+        fld_slice *= np.exp(1j * M * xmesh)
+        # fft to kx, ky space, check it!!!!
+        fld_slice = np.fft.fftshift(fft2(fld_slice))
         
     # drift to the lens
     Ldrift = w_cavity/2
@@ -105,8 +114,8 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     f = flens1
     #ifft to the real space
     fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-    #apply intracavity focusing CRL
-    fld_slice *= np.exp(-1j*np.pi/(f*lambd_slice)*(xmesh**2 + ymesh**2))
+    #apply intracavity focusing CRL, with displacement d1
+    fld_slice *= np.exp(-1j*np.pi/(f*lambd_slice)*((xmesh - x1)**2 + ymesh**2))
     #fft to kx, ky space, check it!!!!
     fld_slice = np.fft.fftshift(fft2(fld_slice))
    
@@ -115,18 +124,39 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     # drift to M2
     Ldrift = w_cavity/2
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
-        
-        
+
     # reflect from M2
     fld_slice = np.einsum('i,ij->ij',np.flip(R0H_slice_2),fld_slice)
-        
+
+    # Add yaw error of M2
+    if delta2 != 0:
+        M = 2 * delta2 * 2 * np.pi / lambd_slice
+        # ifft to the real space
+        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
+        fld_slice *= np.exp(1j * M * xmesh)
+        # fft to kx, ky space, check it!!!!
+        fld_slice = np.fft.fftshift(fft2(fld_slice))
+
+
     # drift to M3
     Ldrift = l_cavity
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
-        
+
+    # Add yaw error of M3
+    if delta3 != 0:
+        M = 2 * delta3 * 2 * np.pi / lambd_slice
+        # ifft to the real space
+        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
+        fld_slice *= np.exp(1j * M * xmesh)
+        # fft to kx, ky space, check it!!!!
+        fld_slice = np.fft.fftshift(fft2(fld_slice))
+
+
     # reflect from M3
     fld_slice = np.einsum('i,ij->ij',R0H_slice_2,fld_slice)
-        
+
+
+
     # drift to lens
     Ldrift = w_cavity/2
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
@@ -136,7 +166,7 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     #ifft to the real space
     fld_slice = ifft2(np.fft.ifftshift(fld_slice))
     #apply intracavity focusing CRL
-    fld_slice *= np.exp(-1j*np.pi/(f*lambd_slice)*(xmesh**2 + ymesh**2))
+    fld_slice *= np.exp(-1j*np.pi/(f*lambd_slice)*((xmesh - x2)**2 + ymesh**2))
     #fft to kx, ky space, check it!!!!
     fld_slice = np.fft.fftshift(fft2(fld_slice))
   
@@ -146,7 +176,17 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
         
     # reflect from M4
     fld_slice = np.einsum('i,ij->ij',np.flip(R0H_slice_2),fld_slice)
-        
+
+    # Add yaw error of M4
+    if delta4 != 0:
+        M = 2 * delta4 * 2 * np.pi / lambd_slice
+        # ifft to the real space
+        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
+        fld_slice *= np.exp(1j * M * xmesh)
+        # fft to kx, ky space, check it!!!!
+        fld_slice = np.fft.fftshift(fft2(fld_slice))
+
+
     # drift to undulator start
     Ldrift = z_und_start
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
@@ -164,11 +204,13 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     
     return fld_slice, fld_slice_transmit
 
-def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,           # dfl params
+def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,  w0=40e-6,  trms=10.e-15,  peak_power = 1e10,    # dfl params
                              npadt = 0, Dpadt = 0, npadx = [0,0],isradi = 1,       # padding params
                              l_undulator = 32*3.9, l_cavity = 149, w_cavity = 1, d1 = 100e-6, d2 = 100e-6,  # cavity params
                              verboseQ = 1,    # verbose params
                              nRoundtrips = 0,                     # recirculation params
+                             delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
+                             x1 = 0, x2 = 0,                   # displacement error of the two lenses
                              readfilename = None, seedfilename = None, workdir = None, saveFilenamePrefix = None):        # read and write
     
     t00 = time.time()
@@ -251,8 +293,8 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
         if readfilename == None:
             # make a new field
             t0 = time.time()
-            fld = make_gaus_beam(ncar= ncar, dgrid=dgrid, w0=40e-6, dt=dt, nslice=nslice, trms=10.e-15)
-            fld *= np.sqrt(1e10/np.max(np.sum(np.abs(fld)**2, axis = (1,2))))
+            fld = make_gaus_beam(ncar= ncar, dgrid=dgrid, w0=w0, dt=dt, nslice=nslice, trms=trms)
+            fld *= np.sqrt(peak_power/np.max(np.sum(np.abs(fld)**2, axis = (1,2))))
             print('took',time.time()-t0,'seconds total to make field with dimensions',fld.shape)
             fld = fld[::isradi,:,:]
             print("fld shape after downsample ", fld.shape)
@@ -332,13 +374,7 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
     
     
     #---------------------------------------------------------------------------------------------------
-    # propagate slice by slice 
-    # TODO: 
-    #    1. angular error, wavefront distort
-    # 
-    #    
-    #    
-    #  
+    # propagate slice by slice
     #---------------------------------------------------------------------------------------------------
     
     # first round from Undstart to Undend
@@ -365,7 +401,8 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
                              R00_slice = R00_slice, R0H_slice = R0H_slice,  R00_slice_2 = R00_slice_2, R0H_slice_2 = R0H_slice_2,    
                              l_cavity = l_cavity, l_undulator = l_undulator, w_cavity = w_cavity,  
                              lambd_slice = lambd_slice, kx_mesh = kx_mesh, ky_mesh = ky_mesh, xmesh = xmesh, ymesh = ymesh, 
-                             roundtripQ = False, verboseQ = False)
+                             roundtripQ = False, delta1 = delta1, delta2 =delta2, delta3 = delta3, delta4 = delta4,   #yaw angle error on each of the mirror
+                             x1 = x1, x2 = x2,verboseQ = False)
        
         # record the current slice
         fld_block[k,:, :] = fld_slice
@@ -412,82 +449,7 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
     
     comm.Barrier()
     
-    #-------------------------------------------------------------------------------------------------
-    # gather fld_blocks back to the root node
-    #-------------------------------------------------------------------------------------------------
-    
-    del kx_mesh
-    del ky_mesh
-    del xmesh
-    del ymesh
-    del  R0H
-    del  R00
     gc.collect()
-    
-    
-    sendbuf2_real = np.ascontiguousarray(np.real(fld_block))
-    sendbuf2_imag = np.ascontiguousarray(np.imag(fld_block))
-    
-    if rank ==0:
-        recvbuf2_real = np.zeros((nslice_padded, nx, ny))
-        recvbuf2_imag = np.zeros((nslice_padded, nx, ny))
-
-    else:
-        recvbuf2_real = None
-        recvbuf2_imag = None
-    
-    comm.Gatherv(sendbuf2_real, [recvbuf2_real, count*nx*ny, displ, MPI.DOUBLE], root=0)
-    comm.Barrier()
-    comm.Gatherv(sendbuf2_imag, [recvbuf2_imag, count*nx*ny, displ, MPI.DOUBLE], root=0)
-    comm.Barrier()
-    
-    del sendbuf2_real
-    del sendbuf2_imag
-    
-    
-    #-------------------------------------------------------------------------------------------------
-    # inverse fft in time on the root node
-    #-------------------------------------------------------------------------------------------------
-    
-    if rank == 0:
-        fld = recvbuf2_real + 1j* recvbuf2_imag
-        
-        del  recvbuf2_real
-        del  recvbuf2_imag
-        #----------------------
-        # ifft to time domain
-        #----------------------
-        t0 = time.time()
-        fld = ifft(np.fft.ifftshift(fld,axes = 0), axis=0)
-        if verboseQ: print('took',time.time()-t0,'seconds for ifft over t')
-
-        #----------------
-        # Dpadt in time
-        #----------------
-        if int(Dpadt) > 0:
-
-            fld = unpad_dfl_t(fld, [int(Dpadt), int(Dpadt)])
-            print("shape of fld after unpadding is ", fld.shape)
-
-            if verboseQ: print('Removed padding of ',dt*int(npadt)*1e15,'fs in time from head and tail of field')
-
-
-
-        #-----------------------------------------   
-        #  write results
-        #-----------------------------------------
-
-        # write field to disk
-        if seedfilename != None:
-            print('Writing seed file to',seedfilename)
-                #writefilename = readfilename + 'r'
-            write_dfl(fld, seedfilename,conjugate_field_for_genesis = False,swapxyQ=False)
-
-        print('It takes ' + str(time.time() - t00) + ' seconds to finish the recirculation.') 
-        
-        del fld
-        
-        gc.collect()
     
 
 params_dic = pickle.load( open( "params.p", "rb" ) )        

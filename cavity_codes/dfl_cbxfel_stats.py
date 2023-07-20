@@ -125,23 +125,23 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
         
     
-    # add error of M2 in real space
-    if misalignQ or roughnessQ:
-        #ifft to the real space
-        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-        if misalignQ:
-            fld_slice *= np.exp(1j*M2*xmesh)
-        if roughnessQ:
-            #fld_slice *= np.exp(1j*2*2*np.pi/lambd_slice*C2*np.sin(np.pi/4 + M2/2))
-            fld_slice *= np.exp(1j*2*2*np.pi/lambd_slice*C2*np.sin(np.pi/4))
-        #fft to kx, ky space, check it!!!!
-        fld_slice = np.fft.fftshift(fft2(fld_slice))
+
     
     
     # reflect from M2
     fld_slice = np.einsum('i,ij->ij',np.flip(R0H_slice_2),fld_slice)
-    
-    
+
+    # add error of M2 in real space
+    if misalignQ or roughnessQ:
+        # ifft to the real space
+        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
+        if misalignQ:
+            fld_slice *= np.exp(1j * M2 * xmesh)
+        if roughnessQ:
+            # fld_slice *= np.exp(1j*2*2*np.pi/lambd_slice*C2*np.sin(np.pi/4 + M2/2))
+            fld_slice *= np.exp(1j * 2 * 2 * np.pi / lambd_slice * C2 * np.sin(np.pi / 4))
+        # fft to kx, ky space, check it!!!!
+        fld_slice = np.fft.fftshift(fft2(fld_slice))
         
     # drift to M3
     Ldrift = l_cavity
