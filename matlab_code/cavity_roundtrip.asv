@@ -1,0 +1,76 @@
+function [x_source, xp_source, x_mid, xp_mid] = cavity_roundtrip(x, xp, Lc, w, f, angle_list, displacement_list)
+    % angle_list, displacement: a list of 6 elements, for C1, L1, C2, C3, L2, C4
+    % respectively
+    
+    %start from the source to C1
+    L = (Lc- 2*w)/2;
+    [x, xp] = drift(x,xp, L);
+    
+    %C1
+    angle = angle_list(1);
+    displacement = displacement_list(1);
+    [x2, xp2] = mirror(x1,xp1, displacement, angle);
+    
+    %C1 to L1
+    L = w/2;
+    [x3, xp3] = drift(x2, xp2, L);
+    
+    %L1
+    angle = angle_list(2);
+    displacement = displacement_list(2);
+    [x4, xp4] = lens(f, x3, xp3, displacement, angle);
+    
+    %L1 to C2
+    L = w/2;
+    [x5, xp5] = drift(x4, xp4, L);
+    
+    %C2
+    angle = angle_list(3);
+    displacement = displacement_list(3);
+    [x6, xp6] = mirror(x5,xp5, displacement, angle);
+    
+    %C2 to mid
+    L = (Lc- 2*w)/2;
+    [x7, xp7] = drift(x6, xp6, L);
+    
+    %mid to C3
+    L = (Lc- 2*w)/2;
+    [x8, xp8] = drift(x7, xp7, L);
+    
+    %C3
+    angle = angle_list(4);
+    displacement = displacement_list(4);
+    [x9, xp9] = mirror(x8, xp8, displacement, angle);
+    
+    % C3 to L2
+    L = w/2;
+    [x10, xp10] = drift(x9, xp9, L);
+    
+    % L2
+    angle = angle_list(5);
+    displacement = displacement_list(5);
+    [x11, xp11] = lens(f, x10, xp10, displacement, angle);
+    
+    
+    % L2 to C4
+    L = w/2;
+    [x12, xp12] = drift(x11, xp11, L);
+    
+    % C4
+     angle = angle_list(6);
+    displacement = displacement_list(6);
+    [x13, xp13] = mirror(x12, xp12, displacement, angle);
+    
+    %C4 to source
+    
+    L = (Lc- 2*w)/2;
+    [x14, xp14] = drift(x13,xp13, L);
+    
+    x_source = x14; 
+    xp_source = xp14;
+    x_mid = x7; 
+    xp_mid = xp7;
+    
+    
+    
+end

@@ -1,0 +1,6 @@
+function [x_new, xp_new] = lens(f, x,xp,displacement, angle)
+ M = [1, 0;
+      -1/f, 1];
+  
+ 
+end
