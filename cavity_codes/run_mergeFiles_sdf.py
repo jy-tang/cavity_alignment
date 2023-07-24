@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import os
 import subprocess
+from time import sleep
 
 def submit_mergeFiles(shell_script = 'RunMergeFiles.sh'):
     cmd = 'sbatch '+ shell_script
@@ -26,7 +27,7 @@ def all_done(jid):
         print("job "  + str(jid[0]) + " is running")
     print('all done!')
 
-def start_mergeFiles(nRoundtrips, workdir, saveFilenamePrefix):
+def start_mergeFiles(nRoundtrips, workdir, saveFilenamePrefix, dgrid, dt, Dpadt):
     
     param_dic = locals()
     pickle.dump(param_dic, open( workdir + "/merge_params.p", "wb" ) )

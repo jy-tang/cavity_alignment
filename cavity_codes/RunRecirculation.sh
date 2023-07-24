@@ -13,4 +13,4 @@
 #SBATCH --time=36:00:00
 
 
-mpirun -n 128 python -u /sdf/group/beamphysics/jytang/genesis/CBXFEL/cavity_codes/dfl_cbxfel_mpi.py
+mpirun -n 128 python -u /sdf/group/beamphysics/jytang/cavity_alignment/cavity_codes/dfl_cbxfel_mpi.py
