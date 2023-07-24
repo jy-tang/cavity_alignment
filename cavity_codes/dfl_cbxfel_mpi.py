@@ -56,7 +56,7 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     
     # propagate one slice around the cavity
     # take a slice in real space, unpadded, return a slice in real space, unpadded
-    
+    # pycharm test
     
      # focal length of the lens
     flens1 = (l_cavity + w_cavity)/2
@@ -98,6 +98,7 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     
     # Add yaw error of M1
     if delta1 != 0:
+        print("Applying angular error on M1")
         M = 2* delta1 * 2*np.pi/lambd_slice
         # ifft to the real space
         fld_slice = ifft2(np.fft.ifftshift(fld_slice))
