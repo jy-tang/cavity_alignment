@@ -91,8 +91,9 @@ def propagate_slice_1mirror(fld_slice, npadx,     # fld slice in spectral space,
 
     return fld_slice
 
-def propagate_1mirror_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,           # dfl params
+def propagate_1mirror(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,           # dfl params
                              npadt = 0, Dpadt = 0, npadx = [0,0],isradi = 1,       # padding params
+                             peak_power = 1e10, trms = 10e-15, w0=40e-6,
                              d = 100e-6,  # crystal thickness
                              Ldrift = 0,
                              verboseQ = 1,    # verbose params
@@ -100,10 +101,7 @@ def propagate_1mirror_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,       
                              readfilename = None, saveFilenamePrefix = None, workdir = None):        # read and write
     
     t00 = time.time()
-    
-    comm = MPI.COMM_WORLD
-    nprocs = comm.Get_size()
-    rank = comm.Get_rank()
+
     
     
     h_Plank = 4.135667696e-15      # Plank constant [eV-sec]
@@ -163,11 +161,14 @@ def propagate_1mirror_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,       
     if readfilename == None:
         # make a new field
         t0 = time.time()
-        fld = make_gaus_beam(ncar= ncar, dgrid=dgrid, w0=40e-6, dt=dt, nslice=nslice, trms=20.e-15)
-        fld *= np.sqrt(1e9/np.max(np.sum(np.abs(fld)**2, axis = (1,2))))
+        fld = make_gaus_beam(ncar= ncar, dgrid=dgrid, w0=w0, dt=dt, nslice=nslice, trms=trms)
+        fld *= np.sqrt(peak_power/np.max(np.sum(np.abs(fld)**2, axis = (1,2))))
         print('took',time.time()-t0,'seconds total to make field with dimensions',fld.shape)
         fld = fld[::isradi,:,:]
         print("fld shape after downsample ", fld.shape)
+        write_dfl(fld, workdir + '/' + saveFilenamePrefix + '_init.dfl',conjugate_field_for_genesis = False,swapxyQ=False)
+
+
     else:
         # read dfl file on disk
         print('Reading in',readfilename)
@@ -208,11 +209,11 @@ def propagate_1mirror_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,       
     # first round from Undstart to Undend
     t0 = time.time()
     for k in range(fld.shape[0]):
-        #if k%50 == 0:    
-            #print("worker " + str(rank) + " finished "+str(np.round(k/fld_block.shape[0],2)*100) + " % of the job")
+        if k%50 == 0:
+            print(" finished "+str(np.round(k/fld.shape[0],2)*100) + " % of the job")
         
         # take the frequency slice
-        fld_slice = np.squeeze(fld_block[k, :, :])
+        fld_slice = np.squeeze(fld[k, :, :])
         
         # take the reflectivity and transmission slice
         R00_slice = np.squeeze(R00[k, :])
@@ -256,10 +257,10 @@ def propagate_1mirror_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,       
     #  write results
     #-----------------------------------------
     # write field to disk
-    if seedfilename != None:
-        print('Writing seed file to',seedfilename)
+    if saveFilenamePrefix != None:
+        print('Writing seed file to',saveFilenamePrefix + '.dfl')
             #writefilename = readfilename + 'r'
-        write_dfl(fld, seedfilename,conjugate_field_for_genesis = False,swapxyQ=False)
+        write_dfl(fld, workdir + '/' + saveFilenamePrefix + '.dfl',conjugate_field_for_genesis = False,swapxyQ=False)
     print('It takes ' + str(time.time() - t00) + ' seconds to finish the recirculation.')
 
 
