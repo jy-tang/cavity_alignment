@@ -50,7 +50,7 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
                              l_cavity, l_undulator, w_cavity,  # cavity parameter
                              lambd_slice, kx_mesh, ky_mesh, xmesh, ymesh, #fld slice information
                              roundtripQ,               # recirculation parameter
-                             delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
+                             n_theta_shift1 = 0, n_theta_shift2 =0, n_theta_shift3 = 0, n_theta_shift4 = 0,   #yaw angle error on each of the mirror
                              x1 = 0, x2 = 0,                   # displacement error of the two lenses
                              verboseQ = False):
     
@@ -97,14 +97,9 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     fld_slice = np.einsum('i,ij->ij',R0H_slice,fld_slice)
     
     # Add yaw error of M1
-    if delta1 != 0:
+    if n_theta_shift1 != 0:
         print("Applying angular error on M1")
-        M = 2* delta1 * 2*np.pi/lambd_slice
-        # ifft to the real space
-        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-        fld_slice *= np.exp(1j * M * xmesh)
-        # fft to kx, ky space, check it!!!!
-        fld_slice = np.fft.fftshift(fft2(fld_slice))
+        fld_slice = np.roll(fld_slice, n_theta_shift1, axis=0)
         
     # drift to the lens
     Ldrift = w_cavity/2
@@ -130,31 +125,22 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     fld_slice = np.einsum('i,ij->ij',np.flip(R0H_slice_2),fld_slice)
 
     # Add yaw error of M2
-    if delta2 != 0:
-        M = 2 * delta2 * 2 * np.pi / lambd_slice
-        # ifft to the real space
-        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-        fld_slice *= np.exp(1j * M * xmesh)
-        # fft to kx, ky space, check it!!!!
-        fld_slice = np.fft.fftshift(fft2(fld_slice))
+    if n_theta_shift2 != 0:
+        print("Applying angular error on M2")
+        fld_slice = np.roll(fld_slice, n_theta_shift2, axis=0)
 
 
     # drift to M3
     Ldrift = l_cavity
     fld_slice = propagate_slice_kspace(field = fld_slice, z = Ldrift, xlamds = lambd_slice, kx = kx_mesh, ky = ky_mesh)
 
-    # Add yaw error of M3
-    if delta3 != 0:
-        M = 2 * delta3 * 2 * np.pi / lambd_slice
-        # ifft to the real space
-        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-        fld_slice *= np.exp(1j * M * xmesh)
-        # fft to kx, ky space, check it!!!!
-        fld_slice = np.fft.fftshift(fft2(fld_slice))
-
-
     # reflect from M3
     fld_slice = np.einsum('i,ij->ij',R0H_slice_2,fld_slice)
+
+    # Add yaw error of M3
+    if n_theta_shift3 != 0:
+        print("Applying angular error on M3")
+        fld_slice = np.roll(fld_slice, n_theta_shift3, axis=0)
 
 
 
@@ -179,13 +165,9 @@ def propagate_slice(fld_slice, npadx,     # fld slice in spectral space, (Ek, x,
     fld_slice = np.einsum('i,ij->ij',np.flip(R0H_slice_2),fld_slice)
 
     # Add yaw error of M4
-    if delta4 != 0:
-        M = 2 * delta4 * 2 * np.pi / lambd_slice
-        # ifft to the real space
-        fld_slice = ifft2(np.fft.ifftshift(fld_slice))
-        fld_slice *= np.exp(1j * M * xmesh)
-        # fft to kx, ky space, check it!!!!
-        fld_slice = np.fft.fftshift(fft2(fld_slice))
+    if n_theta_shift4 != 0:
+        print("Applying angular error on M4")
+        fld_slice = np.roll(fld_slice, n_theta_shift4, axis=0)
 
 
     # drift to undulator start
@@ -210,7 +192,7 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
                              l_undulator = 32*3.9, l_cavity = 149, w_cavity = 1, d1 = 100e-6, d2 = 100e-6,  # cavity params
                              verboseQ = 1,    # verbose params
                              nRoundtrips = 0,                     # recirculation params
-                             delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
+                             n_theta_shift1 = 0, n_theta_shift2 =0, n_theta_shift3 = 0, n_theta_shift4 = 0,   #yaw angle error on each of the mirror
                              x1 = 0, x2 = 0,                   # displacement error of the two lenses
                              readfilename = None, workdir = None, saveFilenamePrefix = None):        # read and write
     
@@ -402,8 +384,9 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
                              R00_slice = R00_slice, R0H_slice = R0H_slice,  R00_slice_2 = R00_slice_2, R0H_slice_2 = R0H_slice_2,    
                              l_cavity = l_cavity, l_undulator = l_undulator, w_cavity = w_cavity,  
                              lambd_slice = lambd_slice, kx_mesh = kx_mesh, ky_mesh = ky_mesh, xmesh = xmesh, ymesh = ymesh, 
-                             roundtripQ = False, delta1 = delta1, delta2 =delta2, delta3 = delta3, delta4 = delta4,   #yaw angle error on each of the mirror
-                             x1 = x1, x2 = x2,verboseQ = False)
+                             roundtripQ = False,
+                             n_theta_shift1 = n_theta_shift1, n_theta_shift2 =n_theta_shift2, n_theta_shift3 = n_theta_shift3, n_theta_shift4 = n_theta_shift4,  #yaw angle error on each of the mirror
+                             x1 = x1, x2 = x2, verboseQ = False)
        
         # record the current slice
         fld_block[k,:, :] = fld_slice
@@ -427,11 +410,16 @@ def recirculate_to_undulator_mpi(zsep, ncar, dgrid, nslice, xlamds=1.261043e-10,
        
         
            # propagate the slice from und start to und start
-            fld_slice, fld_slice_transmit = propagate_slice(fld_slice = fld_slice, npadx = npadx,     
-                             R00_slice = R00_slice, R0H_slice = R0H_slice, R00_slice_2 = R00_slice_2, R0H_slice_2 = R0H_slice_2, 
-                             l_cavity = l_cavity, l_undulator = l_undulator, w_cavity = w_cavity,  
-                             lambd_slice = lambd_slice, kx_mesh = kx_mesh, ky_mesh = ky_mesh, xmesh = xmesh, ymesh = ymesh, 
-                             roundtripQ = True, verboseQ = False)
+            fld_slice, fld_slice_transmit = propagate_slice(fld_slice = fld_slice, npadx = npadx,
+                                                            R00_slice = R00_slice, R0H_slice = R0H_slice, R00_slice_2 = R00_slice_2, R0H_slice_2 = R0H_slice_2,
+                                                            l_cavity = l_cavity, l_undulator = l_undulator, w_cavity = w_cavity,
+                                                            lambd_slice = lambd_slice, kx_mesh = kx_mesh, ky_mesh = ky_mesh, xmesh = xmesh, ymesh = ymesh,
+                                                            roundtripQ = True,
+                                                            n_theta_shift1=n_theta_shift1,
+                                                            n_theta_shift2=n_theta_shift2,
+                                                            n_theta_shift3=n_theta_shift3,
+                                                            n_theta_shift4=n_theta_shift4, # yaw angle error on each of the mirror
+                                                            verboseQ = False)
        
             # record the current slice
             fld_block[k,:, :] = fld_slice

@@ -47,7 +47,13 @@ def merge_files(nRoundtrips, workdir, saveFilenamePrefix, dgrid, dt, Dpadt):
                 field_t = ifft(np.fft.ifftshift(field_t,axes = 0), axis=0)
                 if int(Dpadt) > 0:
                     field_t = unpad_dfl_t(field_t, [int(Dpadt), int(Dpadt)])
-                
+
+                profile_xy = np.sum(np.abs(field_t)**2, axis = 0)
+                profile_t = np.sum(np.abs(field_t)**2, axis = (1, 2))
+
+                profile = {'profile_xy': profile_xy, 'profile_t': profile_t}
+
+                pickle.dump(profile, open(workdir + '/'+saveFilenamePrefix+"profile.p", "wb"))
                 
                 energy_uJ, maxpower, tmean, trms, tfwhm, xmean, xrms, xfwhm, ymean, yrms, yfwhm = fld_info(field_t, dgrid = dgrid, dt=dt)
                 return_field_info = [Round, energy_uJ, maxpower, tmean, trms, tfwhm, xmean, xrms, xfwhm, ymean, yrms, yfwhm]

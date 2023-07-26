@@ -34,7 +34,7 @@ def start_recirculation(zsep, nslice, npadt, npadx, nRoundtrips,
                         ncar = 181 , dgrid =540e-6,  xlamds=1.261043e-10,   w0=40e-6,  trms=10.e-15,  peak_power = 1e10,
                        Dpadt = 0, isradi = 1,       # padding params
                        l_undulator = 32*3.9, l_cavity = 149, w_cavity = 1, d1 = 100e-6, d2 = 100e-6, # cavity params
-                       delta1 = 0, delta2 =0, delta3 = 0, delta4 = 0,   #yaw angle error on each of the mirror
+                       n_theta_shift1 = 0, n_theta_shift2 =0, n_theta_shift3 = 0, n_theta_shift4 = 0,   #yaw angle error on each of the mirror
                        x1 = 0, x2 = 0,                   # displacement error of the two lenses
                        verboseQ = 1):
     
