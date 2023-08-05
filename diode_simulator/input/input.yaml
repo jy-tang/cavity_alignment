@@ -1,0 +1,28 @@
+crystal:
+  theta: 45    # in degree
+  d: 200.0e-6  # thickness
+
+beam:
+  sigma_x: 20.0e-6
+  sigma_y: 20.0e-6
+  peak_power: 10.0e-9
+  Eph: 9831.88
+  nx: 100
+  ny: 100
+  npadx: 1000
+
+diode:
+  response_curve:
+    type: 'function'   # defined by function or read from file
+    skew_num: 1.0
+    noise_level: 0.1
+
+  position:
+    d: 1.0           # distance from the crystal
+    x: 0.0           # center position
+    y: 0.0
+    radius: 80.0e-6   # hole size
+
+scan:
+  range: 100.0e-6  # in radius
+  nsample: 100
