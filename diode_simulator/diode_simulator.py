@@ -3,6 +3,7 @@ import yaml
 import numpy as np
 from Bragg_mirror_sf import *
 from scipy.stats import skewnorm
+import random
 class Diode:
     """
     The main class of a fast diode simulator
@@ -25,7 +26,7 @@ class Diode:
         self.init_beam()
 
     def parse_input(self, input_file):
-        with open('../input/input.yaml') as f:
+        with open(input_file) as f:
             input = yaml.load(f, Loader=yaml.FullLoader)
         self.check_input_consistency(input)
         self.input = input
@@ -125,7 +126,7 @@ class Diode:
 
         return x, y
 
-    def get_diode_signal(self, d_theta):
+    def get_diode_signal(self, d_theta, x0 = None, y0 = None, jitter_on = True):
 
         # transmit the crystal
         fftfld_transmit = self.forward_diffraction(d_theta)
@@ -136,16 +137,24 @@ class Diode:
         #unpad
         fld_transmit = fld_transmit[self.npadx:-self.npadx]
         # through the iris
-        x0 = self.diode_position['x']
-        y0 = self.diode_position['y']
+        if not x0:
+            x0 = self.diode_position['x']
+        if not y0:
+            y0 = self.diode_position['x']
         r = self.diode_position['radius']
         xmesh, ymesh = np.meshgrid(self.x, self.y, indexing='ij')
         fld_transmit[(xmesh - x0) ** 2 + (ymesh - y0) ** 2 > r ** 2] = 0
         # get final intensity
         intensity = np.sum(np.abs(fld_transmit)**2)*self.dx*self.dy
+        # add 100% noise
+        if jitter_on:
+            intensity *= random.random()
         # get diode response
         time, signal = self.get_diode_response(intensity)
         return intensity, time, signal
+
+
+    #def update_with_pv(self, **):
 
     def scan_theta(self, d_theta_range):
         intensity_record = np.zeros(d_theta_range.shape)
