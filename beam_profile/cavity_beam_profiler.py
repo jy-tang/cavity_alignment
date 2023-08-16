@@ -68,11 +68,11 @@ class cavity_profiler:
         self.beam.crystal_mirror(h = self.crystal_h, dtheta_x = dtheta1_x, dtheta_y = dtheta1_y)
 
         # from C1 to x12
-        Ldrift = self.screens['x12'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x12'] = copy.deepcopy(self.beam)
+        #Ldrift = self.screens['x12'] - self.beam.z_proj
+        #self.beam.propagate(Ldrift)
+        #self.record['x12'] = copy.deepcopy(self.beam)
 
-        # from x12 to CRL1
+        # from C1 to CRL1
         Ldrift = self.L1/2 + self.L2/2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
 
@@ -92,11 +92,21 @@ class cavity_profiler:
         self.beam.crystal_mirror(h=self.crystal_h, dtheta_x=dtheta2_x, dtheta_y=dtheta2_y)
 
         # C2 to x22
-        Ldrift = self.screens['x22'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x22'] = copy.deepcopy(self.beam)
+        #Ldrift = self.screens['x22'] - self.beam.z_proj
+        #self.beam.propagate(Ldrift)
+        #self.record['x22'] = copy.deepcopy(self.beam)
 
-        # x22 to x31
+        # C2 to x23
+        Ldrift = self.screens['x23'] - self.beam.z_proj
+        self.beam.propagate(Ldrift)
+        self.record['x23'] = copy.deepcopy(self.beam)
+
+        # x23 to x24
+        Ldrift = self.screens['x24'] - self.beam.z_proj
+        self.beam.propagate(Ldrift)
+        self.record['x24'] = copy.deepcopy(self.beam)
+
+        # x24 to x31
         Ldrift = self.screens['x31'] - self.beam.z_proj
         self.beam.propagate(Ldrift)
         self.record['x31'] = copy.deepcopy(self.beam)
@@ -109,11 +119,11 @@ class cavity_profiler:
         self.beam.crystal_mirror(h=self.crystal_h, dtheta_x=dtheta3_x, dtheta_y=dtheta3_y)
 
         # C3 to x32
-        Ldrift = self.screens['x32'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x32'] = copy.deepcopy(self.beam)
+        #Ldrift = self.screens['x32'] - self.beam.z_proj
+        #self.beam.propagate(Ldrift)
+        #self.record['x32'] = copy.deepcopy(self.beam)
 
-        # x32 to CRL2
+        # C3 to CRL2
         Ldrift = self.L1/2 + self.L2 + self.L1 + self.L2/2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
 
