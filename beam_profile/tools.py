@@ -55,6 +55,6 @@ def plot_2D_contour(x, y, z):
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.imshow(z, extent=(min(x)*1e6, max(x)*1e6, min(y)*1e6, max(y)*1e6), origin='lower',  cmap=cmap)
-    plt.xlabel('x ($\mu m$)')
-    plt.ylabel('y ($\mu m$)')
+    plt.xlabel('y ($\mu m$)')
+    plt.ylabel('x ($\mu m$)')
     plt.show()
