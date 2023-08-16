@@ -67,12 +67,12 @@ class cavity_profiler:
         # reflect from C1
         self.beam.crystal_mirror(h = self.crystal_h, dtheta_x = dtheta1_x, dtheta_y = dtheta1_y)
 
-        # from C1 to x12
-        #Ldrift = self.screens['x12'] - self.beam.z_proj
-        #self.beam.propagate(Ldrift)
-        #self.record['x12'] = copy.deepcopy(self.beam)
+        # from C1 to x10
+        Ldrift = self.screens['x10'] - self.beam.z_proj
+        self.beam.propagate(Ldrift)
+        self.record['x10'] = copy.deepcopy(self.beam)
 
-        # from C1 to CRL1
+        # from x10 to CRL1
         Ldrift = self.L1/2 + self.L2/2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
 
@@ -147,7 +147,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
         self.record['x42'] = copy.deepcopy(self.beam)
 
-        # x41 to the undulator center
+        # x42 to the undulator center
         Ldrift = (self.L1 + self.L2)*2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
 

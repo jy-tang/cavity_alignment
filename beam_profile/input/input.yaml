@@ -11,11 +11,12 @@ beam:
 cavity_conf:
   short_arm: 0.65
   long_arm: 32.100436588
-  focal_length: 30
+  focal_length: 16.375218294
 
 screens:
   x11:  16.000028294                  # the distance from the center of the undulator
   #x12:  16.050028294
+  x10: 16.144218294
   x21:  16.650028294000002
   #x22:  16.750218294
   x23:  18.534196294
