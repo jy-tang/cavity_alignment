@@ -54,7 +54,8 @@ class cavity_profiler:
                           dtheta2_x = 0.0, dtheta2_y = 0.0,
                           dtheta3_x = 0.0, dtheta3_y = 0.0,
                           dtheta4_x = 0.0, dtheta4_y = 0.0,
-                          dx_CRL1 = 0.0, dx_CRL2 = 0.0):
+                          dx_CRL1 = 0.0, dx_CRL2 = 0.0,
+                          dy_CRL1 = 0.0, dy_CRL2 = 0.0):
         # from the center of the undulator to x11
         Ldrift = self.screens['x11'] - self.beam.z_proj
         self.beam.propagate(Ldrift)
@@ -77,7 +78,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
 
         # CRL1
-        self.beam.focal_lens(f = self.f, delta_x = dx_CRL1)
+        self.beam.focal_lens(f = self.f, delta_x = dx_CRL1, delta_y = dy_CRL1)
 
         # CRL1 to x21
         Ldrift = self.screens['x21'] - self.beam.z_proj
@@ -128,7 +129,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
 
         # CRL2
-        self.beam.focal_lens(f=self.f, delta_x=dx_CRL2)
+        self.beam.focal_lens(f=self.f, delta_x=dx_CRL2, delta_y=dy_CRL2)
 
         # CRL2 to x41
         Ldrift = self.screens['x41'] - self.beam.z_proj
@@ -150,6 +151,10 @@ class cavity_profiler:
         # x42 to the undulator center
         Ldrift = (self.L1 + self.L2)*2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
+
+        # set z and z_proj to zero
+        self.beam.z = 0.0
+        self.beam.z_proj =0.0
 
 
     def get_profile(self, screen_name):
