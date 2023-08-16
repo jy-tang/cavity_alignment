@@ -69,10 +69,10 @@ class Diode:
         xmesh, ymesh = np.meshgrid(self.x, self.y, indexing='ij')
         self.dx, self.dy = dx, dy
 
-        sigma = w0/2
+
 
         self.field = 1. / (2. * np.pi * sigma ** 2) * np.exp(
-            -((xmesh) ** 2. / (2. * sigma ** 2.) + (ymesh) ** 2. / (2. * sigma ** 2.)))
+            -((xmesh) ** 2. / (w ** 2.) + (ymesh) ** 2. / (w ** 2.)))
 
         self.field /= np.sqrt(np.sum(np.abs(self.field) ** 2) * dx * dy)
 

@@ -5,7 +5,6 @@ crystal:
 beam:
   dgrid: 100.0e-6
   ncar: 100
-  nslice: 50
   w0: 40.0e-6
   Eph: 9831.88
   npadx: 1000
