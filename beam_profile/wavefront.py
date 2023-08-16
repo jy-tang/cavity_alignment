@@ -54,7 +54,7 @@ class GaussianWavefront:
         self.y0 += Ldrift*self.yp
         self.update()
 
-    def focal_lens(self, f, delta_x = 0.0):
+    def focal_lens(self, f, delta_x = 0.0, delta_y = 0.0):
         """
         go throught a focal lens
         :param f: focal length
@@ -71,6 +71,9 @@ class GaussianWavefront:
         # update x xp
         self.xp += -1/f*self.x0
         self.xp += delta_x/f
+        # update y yp
+        self.yp += -1/f*self.y0
+        self.yp += delta_y/f
 
 
 
