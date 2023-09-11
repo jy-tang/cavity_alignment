@@ -140,7 +140,7 @@ class Diode:
         if not x0:
             x0 = self.diode_position['x']
         if not y0:
-            y0 = self.diode_position['x']
+            y0 = self.diode_position['y']
         r = self.diode_position['radius']
         xmesh, ymesh = np.meshgrid(self.x, self.y, indexing='ij')
         fld_transmit[(xmesh - x0) ** 2 + (ymesh - y0) ** 2 > r ** 2] = 0
