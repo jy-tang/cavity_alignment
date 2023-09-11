@@ -1,5 +1,6 @@
 crystal:
   h: -0.3217e+6
+  R0: 0.9956       #The reflectivity np.abs(R0H), not squared
 
 beam:
   dgrid: 100.0e-6
@@ -26,3 +27,14 @@ screens:
   x41:  49.400654882
   x42:  49.556554469999995
 
+diode_E:
+  response_curve:
+    skew_num: 10.0
+    noise_level: 0.05
+    n_sample: 1000
+
+  position:
+    d: 0.5           # distance from the crystal C3
+    x: 0.0           # center position
+    y: 0.0
+    radius: 80.0e-6   # hole size

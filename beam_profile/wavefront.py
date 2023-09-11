@@ -12,7 +12,15 @@ class GaussianWavefront:
 
     """
 
-    def __init__(self, input):
+    def __init__(self, input, x0 = 0.0, y0 = 0.0, xp = 0.0, yp = 0.0):
+        """
+
+        :param input:
+        :param x0:  x position of the source
+        :param y0:  y position of the source
+        :param xp:  x angle of the source
+        :param yp:  y angle of the source
+        """
         self.dgrid = input['dgrid']
         self.ncar = input['ncar']
         self.w = self.w0 = input['w0']
@@ -20,7 +28,7 @@ class GaussianWavefront:
         self.xlamds = 1.23984198 /self.Eph * 1e-6
         self.k = 2*np.pi/self.xlamds
         self.zR = np.pi*self.w0**2/self.xlamds
-        self.A = 1.0 # field amplitude
+        self.A = self.A0 = 1.0 # field amplitude
 
         self.z = self.z_proj =  0.0    # initial position
         self.q = self.q0 = 1j*np.pi*self.w0**2/self.xlamds
@@ -28,14 +36,35 @@ class GaussianWavefront:
 
         self.x = self.y = np.linspace(-self.dgrid, self.dgrid, self.ncar)
 
-        self.x0 = self.y0 = 0.0 # center of the beam
-        self.xp = self.yp = 0.0   # angle of the central axis
+        self.x0_init = self.x0 = x0 # center of the beam
+        self.y0_init = self.y0 = y0  # center of the beam
+        self.xp_init = self.xp = xp   # angle of the central axis
+        self.yp_init = self.yp = yp  # angle of the central axis
 
         self.dx = self.dy = 2*self.dgrid/self.ncar
         self.xmesh, self.ymesh = np.meshgrid(self.x, self.y, indexing='ij')
 
+
+
+
+    def reset(self):
+        """
+        reset everything to its initial condition
+        :return:
+        """
+        self.x0 = self.x0_init   # center of the beam
+        self.y0 = self.y0_init  # center of the beam
+        self.xp = self.xp_init   # angle of the central axis
+        self.yp = self.yp_init   # angle of the central axis
+
+        self.z = self.z_proj = 0.0
+        self.q = self.q0
+        self.rho = self.rho0
+        self.w = self.w0
+        self.A = self.A0
+
     def get_field(self):
-        return 1/self.q*np.exp(-1j*self.k*((self.xmesh - self.x0)**2 + (self.ymesh - self.y0)**2)/2/self.q)
+        return self.A * 1/self.q*np.exp(-1j*self.k*((self.xmesh - self.x0)**2 + (self.ymesh - self.y0)**2)/2/self.q)
 
     def update(self):
         self.rho = np.real(1/self.q)
@@ -77,7 +106,7 @@ class GaussianWavefront:
 
 
 
-    def crystal_mirror(self, h, dtheta_x = 0.0, dtheta_y = 0.0):
+    def crystal_mirror(self, h, R, dtheta_x = 0.0, dtheta_y = 0.0):
         """
         R*exp(ih kx)
         :param dtheta:
@@ -88,6 +117,8 @@ class GaussianWavefront:
         self.xp *= -1
         self.xp += dtheta_x
         self.yp += dtheta_y
+
+        self.A *= R
 
 
 
