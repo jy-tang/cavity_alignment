@@ -1,6 +1,7 @@
 crystal:
   h: -0.3217e+6
-  R0: 0.9956       #The reflectivity np.abs(R0H), not squared
+  R0: 0.8
+  #The reflectivity np.abs(R0H), not squared
 
 beam:
   dgrid: 100.0e-6

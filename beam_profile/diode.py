@@ -45,9 +45,9 @@ class Diode:
         y = skewnorm.pdf(x, skew_num)
         y /= np.max(y)
         y *= intensity
-        y += np.random.normal(0, noise_level * intensity, len(x))
+        #y += np.random.normal(0, noise_level * intensity, len(x))
 
-        x = (x - np.min(x)) / np.max(x)
+        x = (x - np.min(x)) / (np.max(x) - np.min(x))
         x *= tsep
         x += self.tstart
 
