@@ -5,7 +5,7 @@ import numpy as np
 import random
 from wavefront import GaussianWavefront
 import copy
-from diode import Diode
+from diode import *
 class cavity_profiler:
     """
     The main class of a cavity simulator
@@ -16,6 +16,8 @@ class cavity_profiler:
         self.input_file = input_file
 
         self.init_beam()
+
+        self.screen_in = None           # The screen inserted
 
 
     def parse_input(self, input_file):
@@ -33,15 +35,31 @@ class cavity_profiler:
         self.roundtrip_time = (self.L1 + self.L2)*2/299792458
 
         self.screens = input['screens']
+        self.trans_screens = input['trans_screens']
 
         # Diode E
         self.diode_E = Diode(input['diode_E'])
+
+        # Diode C2
+        self.diode_C2 = Diode_Bragg(input['diode_C2'], input['beam'], input['crystal'])
+
+        #Initialize record
+        self.record = {}
+        nx = ny = self.beam0['ncar']
+        for screen in self.screens:
+            self.record[screen] = np.zeros((nx, ny))
+        for screen in self.trans_screens:
+            self.record[screen] = np.zeros((nx, ny))
+
 
 
 
     def init_beam(self):
         self.beam = GaussianWavefront(self.beam0)
-        self.record = {}
+
+
+    def insert_screen(self, screen_name):
+        self.screen_in = screen_name
 
     def reset(self):
         """
@@ -49,7 +67,11 @@ class cavity_profiler:
         :return:
         """
         self.beam.reset()
-        self.record = {}
+
+        #self.record = {}
+        nx = ny = self.beam0['ncar']
+        for screen in self.record:
+            self.record[screen] = np.zeros((nx, ny))
         self.diode_E.reset()
 
 
@@ -64,18 +86,33 @@ class cavity_profiler:
         for req in self.required_inputs:
             assert req in input, f'Required input parameter {req} to {self.__class__.__name__}.__init__(**kwargs) was not found.'
 
-
+    def propagate_and_record_screen(self, current_screen):
+        stop_flag = False
+        if self.screen_in == current_screen:   # if the screen is in
+            if current_screen in self.trans_screens:   # is a transmissive screen, add up the profile from each turn
+                Ldrift = self.trans_screens[current_screen]['position'] - self.beam.z_proj
+                transmission = self.trans_screens[current_screen]['transmission']
+                self.beam.propagate(Ldrift)
+                self.record[current_screen] += transmission * np.abs(self.beam.get_field()) ** 2
+            else:  # else, block the beam from the screen
+                Ldrift = self.trans_screens[current_screen] - self.beam.z_proj
+                self.beam.propagate(Ldrift)
+                self.record[current_screen] = np.abs(self.beam.get_field()) ** 2
+                stop_flag = True
+        return stop_flag
     def recirculate(self, dtheta1_x = 0.0, dtheta1_y = 0.0,
                           dtheta2_x = 0.0, dtheta2_y = 0.0,
                           dtheta3_x = 0.0, dtheta3_y = 0.0,
                           dtheta4_x = 0.0, dtheta4_y = 0.0,
                           dx_CRL1 = 0.0, dx_CRL2 = 0.0,
                           dy_CRL1 = 0.0, dy_CRL2 = 0.0,
-                          dx_diodeE = 0.0, dy_diodeE = 0.0):
+                          dx_diodeE = 0.0, dy_diodeE = 0.0,
+                          use_diodeC2 = False, dx_diodeC2 = 0.0, dy_diodeC2 = 0.0):
         # from the center of the undulator to x11
-        Ldrift = self.screens['x11'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x11'] = copy.deepcopy(self.beam)
+        current_screen = 'x11'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # from x11 to C1
         Ldrift = self.L1/2 - self.beam.z_proj
@@ -85,9 +122,10 @@ class cavity_profiler:
         self.beam.crystal_mirror(h = self.crystal_h, R = self.crystal_R0, dtheta_x = dtheta1_x, dtheta_y = dtheta1_y)
 
         # from C1 to x10
-        Ldrift = self.screens['x10'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x10'] = copy.deepcopy(self.beam)
+        current_screen = 'x10'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # from x10 to CRL1
         Ldrift = self.L1/2 + self.L2/2 - self.beam.z_proj
@@ -97,26 +135,32 @@ class cavity_profiler:
         self.beam.focal_lens(f = self.f, delta_x = dx_CRL1, delta_y = dy_CRL1)
 
         # CRL1 to x21
-        Ldrift = self.screens['x21'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x21'] = copy.deepcopy(self.beam)
+        current_screen = 'x21'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # x21 to C2
         Ldrift = self.L2 + self.L1/2 - self.beam.z_proj
         self.beam.propagate(Ldrift)
 
+        if use_diodeC2:
+            diffract_beam = copy.deepcopy(self.beam)
+
+            self.diode_C2.update_beam(diffract_beam)
+            self.diode_C2.record_diode_signal(tsep=self.roundtrip_time,
+                                             x0=dx_diodeC2, y0=dy_diodeC2)
+
         # reflect from C2
         self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta2_x, dtheta_y=dtheta2_y)
 
-        # C2 to x22
-        #Ldrift = self.screens['x22'] - self.beam.z_proj
-        #self.beam.propagate(Ldrift)
-        #self.record['x22'] = copy.deepcopy(self.beam)
+
 
         # C2 to x23
-        Ldrift = self.screens['x23'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x23'] = copy.deepcopy(self.beam)
+        current_screen = 'x23'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # from x23 to Station 3
         diffract_beam = copy.deepcopy(self.beam)
@@ -128,14 +172,16 @@ class cavity_profiler:
                                          x0 = dx_diodeE, y0 = dy_diodeE)
 
         # x23 to x24
-        Ldrift = self.screens['x24'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x24'] = copy.deepcopy(self.beam)
+        current_screen = 'x24'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # x24 to x31
-        Ldrift = self.screens['x31'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x31'] = copy.deepcopy(self.beam)
+        current_screen = 'x31'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # x31 to C3
         Ldrift = self.L1/2 + self.L2 + self.L1 - self.beam.z_proj
@@ -157,9 +203,10 @@ class cavity_profiler:
         self.beam.focal_lens(f=self.f, delta_x=dx_CRL2, delta_y=dy_CRL2)
 
         # CRL2 to x41
-        Ldrift = self.screens['x41'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x41'] = copy.deepcopy(self.beam)
+        current_screen = 'x41'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # x41 to C4
         Ldrift = self.L1/2 + self.L2 + self.L1 + self.L2 - self.beam.z_proj
@@ -169,9 +216,10 @@ class cavity_profiler:
         self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta4_x, dtheta_y=dtheta4_y)
 
         # C4 to x42
-        Ldrift = self.screens['x42'] - self.beam.z_proj
-        self.beam.propagate(Ldrift)
-        self.record['x42'] = copy.deepcopy(self.beam)
+        current_screen = 'x42'
+        stop_flag = self.propagate_and_record_screen(current_screen)
+        if stop_flag:
+            return
 
         # x42 to the undulator center
         Ldrift = (self.L1 + self.L2)*2 - self.beam.z_proj
@@ -185,7 +233,7 @@ class cavity_profiler:
     def get_profile(self, screen_name):
         assert screen_name in self.record.keys(), "Error, no such screen!"
         bt = self.record[screen_name]
-        return bt.x, bt.y, bt.get_field()
+        return self.beam.x, self.beam.y, bt
 
 
     def get_diodeE_signal(self):
