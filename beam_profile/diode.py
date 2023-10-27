@@ -100,8 +100,8 @@ class Diode:
 
 
 class Diode_Bragg(Diode):
-    def __int__(self, diode_input, beam_input, crystal_input):
-        super().__init__(id, diode_input)
+    def __init__(self, diode_input, beam_input, crystal_input):
+        super().__init__(diode_input)
         self.Eph = beam_input['Eph']
         self.xlamds = 1.239842e-06/self.Eph
         self.npadx = beam_input['npadx']
@@ -136,7 +136,7 @@ class Diode_Bragg(Diode):
         self.fftfld = np.fft.fftshift(np.fft.fft2(field_padded), axes=(0, 1))
 
     def forward_diffraction(self, d_theta):
-        R0H, R00 = self.get_Bragg_response(d_theta)
+        R0H, R00 = self.get_Bragg_response(d_theta + self.beam.xp)
         return np.einsum('i,ij->ij', R00, self.fftfld)
 
 

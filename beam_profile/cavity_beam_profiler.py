@@ -18,6 +18,7 @@ class cavity_profiler:
         self.init_beam()
 
         self.screen_in = None           # The screen inserted
+        self.stop_flag = False           # flags showing the beam is blocked by a screen
 
 
     def parse_input(self, input_file):
@@ -61,6 +62,9 @@ class cavity_profiler:
     def insert_screen(self, screen_name):
         self.screen_in = screen_name
 
+    def remove_screen(self):
+        self.screen_in = None
+
     def reset(self):
         """
         reset everything to its initial condition
@@ -73,10 +77,12 @@ class cavity_profiler:
         for screen in self.record:
             self.record[screen] = np.zeros((nx, ny))
         self.diode_E.reset()
+        #self.screen_in = None
+        self.stop_flag = False
 
 
     def check_input_consistency(self, input):
-        self.required_inputs = ['crystal', 'beam', 'cavity_conf', 'screens', 'diode_E']
+        self.required_inputs = ['crystal', 'beam', 'cavity_conf', 'screens', 'diode_E', 'trans_screens', 'diode_C2']
 
         allowed_params = self.required_inputs + []
         for input_param in input:
@@ -87,19 +93,22 @@ class cavity_profiler:
             assert req in input, f'Required input parameter {req} to {self.__class__.__name__}.__init__(**kwargs) was not found.'
 
     def propagate_and_record_screen(self, current_screen):
-        stop_flag = False
+        if current_screen in self.trans_screens:  # is a transmissive screen, add up the profile from each turn
+            Ldrift = self.trans_screens[current_screen]['position'] - self.beam.z_proj
+        else:
+            Ldrift = self.screens[current_screen] - self.beam.z_proj
+        self.beam.propagate(Ldrift)
+
+
         if self.screen_in == current_screen:   # if the screen is in
             if current_screen in self.trans_screens:   # is a transmissive screen, add up the profile from each turn
-                Ldrift = self.trans_screens[current_screen]['position'] - self.beam.z_proj
                 transmission = self.trans_screens[current_screen]['transmission']
-                self.beam.propagate(Ldrift)
-                self.record[current_screen] += transmission * np.abs(self.beam.get_field()) ** 2
+                self.beam.A *= np.sqrt(transmission)
+                self.record[current_screen] += np.abs(self.beam.get_field()) ** 2
             else:  # else, block the beam from the screen
-                Ldrift = self.trans_screens[current_screen] - self.beam.z_proj
-                self.beam.propagate(Ldrift)
                 self.record[current_screen] = np.abs(self.beam.get_field()) ** 2
-                stop_flag = True
-        return stop_flag
+                self.stop_flag = True
+
     def recirculate(self, dtheta1_x = 0.0, dtheta1_y = 0.0,
                           dtheta2_x = 0.0, dtheta2_y = 0.0,
                           dtheta3_x = 0.0, dtheta3_y = 0.0,
@@ -108,10 +117,14 @@ class cavity_profiler:
                           dy_CRL1 = 0.0, dy_CRL2 = 0.0,
                           dx_diodeE = 0.0, dy_diodeE = 0.0,
                           use_diodeC2 = False, dx_diodeC2 = 0.0, dy_diodeC2 = 0.0):
+
+        if self.stop_flag:
+            print('Beam blocked!')
+            return
         # from the center of the undulator to x11
         current_screen = 'x11'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # from x11 to C1
@@ -123,8 +136,8 @@ class cavity_profiler:
 
         # from C1 to x10
         current_screen = 'x10'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # from x10 to CRL1
@@ -136,8 +149,8 @@ class cavity_profiler:
 
         # CRL1 to x21
         current_screen = 'x21'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # x21 to C2
@@ -158,8 +171,8 @@ class cavity_profiler:
 
         # C2 to x23
         current_screen = 'x23'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # from x23 to Station 3
@@ -173,14 +186,14 @@ class cavity_profiler:
 
         # x23 to x24
         current_screen = 'x24'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # x24 to x31
         current_screen = 'x31'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # x31 to C3
@@ -204,8 +217,8 @@ class cavity_profiler:
 
         # CRL2 to x41
         current_screen = 'x41'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # x41 to C4
@@ -217,8 +230,8 @@ class cavity_profiler:
 
         # C4 to x42
         current_screen = 'x42'
-        stop_flag = self.propagate_and_record_screen(current_screen)
-        if stop_flag:
+        self.propagate_and_record_screen(current_screen)
+        if self.stop_flag:
             return
 
         # x42 to the undulator center
