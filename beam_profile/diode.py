@@ -125,18 +125,24 @@ class Diode_Bragg(Diode):
         nx, ny = field.shape
         nx_padded = nx + 2 * self.npadx
 
+        x_padded = np.arange(nx_padded)*dx
+        x_padded -= np.mean(x_padded)
+        y = self.beam.y
+
+        self.xmesh, self.ymesh = np.meshgrid(x_padded, y, indexing = 'ij')
+
         self.kx = Dkx / 2. * np.linspace(-1., 1., nx_padded)
-        self.ky = Dkx / 2. * np.linspace(-1., 1., ny)
+        self.ky = Dky / 2. * np.linspace(-1., 1., ny)
         self.k = 2 * np.pi / self.xlamds
         self.theta_x = self.kx / self.k
         self.theta_y = self.ky / self.k
 
 
-        field_padded = np.pad(self.field, ((self.npadx, self.npadx), (0, 0)))
+        field_padded = np.pad(field, ((self.npadx, self.npadx), (0, 0)))
         self.fftfld = np.fft.fftshift(np.fft.fft2(field_padded), axes=(0, 1))
 
     def forward_diffraction(self, d_theta):
-        R0H, R00 = self.get_Bragg_response(d_theta + self.beam.xp)
+        R0H, R00 = self.get_Bragg_response(d_theta)
         return np.einsum('i,ij->ij', R00, self.fftfld)
 
 
@@ -146,7 +152,7 @@ class Diode_Bragg(Diode):
         H = np.exp(-1j * self.xlamds * Ldrift * (kx_mesh ** 2 + ky_mesh ** 2) / (4 * np.pi))
         return fftfld * H
 
-    def get_diode_intensity(self, d_theta, x0 = None, y0 = None, jitter_on = True):
+    def get_diode_intensity(self, d_theta, x0 = None, y0 = None, jitter_on = False):
 
         # transmit the crystal
         fftfld_transmit = self.forward_diffraction(d_theta)
@@ -155,15 +161,15 @@ class Diode_Bragg(Diode):
         #ifft to real space
         fld_transmit = np.fft.ifft2(np.fft.ifftshift(fftfld_transmit), axes = (0,1))
         #unpad
-        fld_transmit = fld_transmit[self.npadx:-self.npadx]
+        #fld_transmit = fld_transmit[self.npadx:-self.npadx]
         # through the iris
         if not x0:
             x0 = self.x0
         if not y0:
             y0 = self.y0
         r = self.r
-        xmesh, ymesh = self.beam.xmesh, self.beam.ymesh
-        fld_transmit[(xmesh - x0) ** 2 + (ymesh - y0) ** 2 > r ** 2] = 0
+        #xmesh, ymesh = self.beam.xmesh, self.beam.ymesh
+        fld_transmit[(self.xmesh - x0) ** 2 + (self.ymesh - y0) ** 2 > r ** 2] = 0
         # get final intensity
         intensity = np.sum(np.abs(fld_transmit)**2)* self.beam.dx * self.beam.dy
         # add 100% noise
@@ -172,3 +178,13 @@ class Diode_Bragg(Diode):
 
         return intensity
 
+    def record_diode_signal(self, tsep, x0=None, y0=None, d_theta = 0.0):
+        # get the peak intensity at the diode
+        intensity = self.get_diode_intensity(x0 = x0, y0 = y0, d_theta = d_theta)
+        # get diode response
+        time, signal = self.get_diode_response(intensity, tsep)
+        # append the signal to the record
+        self.diode_time_record = np.append(self.diode_time_record, time)
+        self.diode_signal_record = np.append(self.diode_signal_record, signal)
+
+        self.update_tstart(self.tstart + tsep)

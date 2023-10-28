@@ -77,6 +77,7 @@ class cavity_profiler:
         for screen in self.record:
             self.record[screen] = np.zeros((nx, ny))
         self.diode_E.reset()
+        self.diode_C2.reset()
         #self.screen_in = None
         self.stop_flag = False
 
@@ -162,7 +163,7 @@ class cavity_profiler:
 
             self.diode_C2.update_beam(diffract_beam)
             self.diode_C2.record_diode_signal(tsep=self.roundtrip_time,
-                                             x0=dx_diodeC2, y0=dy_diodeC2)
+                                             x0=dx_diodeC2, y0=dy_diodeC2, d_theta= dtheta2_x)
 
         # reflect from C2
         self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta2_x, dtheta_y=dtheta2_y)
@@ -250,4 +251,6 @@ class cavity_profiler:
 
 
     def get_diodeE_signal(self):
+        return self.diode_E.diode_time_record, self.diode_E.diode_signal_record
+    def get_diodeC2_signal(self):
         return self.diode_E.diode_time_record, self.diode_E.diode_signal_record

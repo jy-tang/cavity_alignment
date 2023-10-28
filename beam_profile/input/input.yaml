@@ -1,7 +1,7 @@
 crystal:
   h: -0.3217e+6
   R0: 0.99
-  thickness: 200e-6
+  thickness: 200.0e-6
   #The reflectivity np.abs(R0H), not squared
 
 beam:
