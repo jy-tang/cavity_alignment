@@ -110,10 +110,10 @@ class cavity_profiler:
                 self.record[current_screen] = np.abs(self.beam.get_field()) ** 2
                 self.stop_flag = True
 
-    def recirculate(self, dtheta1_x = 0.0, dtheta1_y = 0.0,
-                          dtheta2_x = 0.0, dtheta2_y = 0.0,
-                          dtheta3_x = 0.0, dtheta3_y = 0.0,
-                          dtheta4_x = 0.0, dtheta4_y = 0.0,
+    def recirculate(self, dtheta1_x = 0.0, dtheta1_y = 0.0, dx1 = 0.0,
+                          dtheta2_x = 0.0, dtheta2_y = 0.0, dx2 = 0.0,
+                          dtheta3_x = 0.0, dtheta3_y = 0.0, dx3 = 0.0,
+                          dtheta4_x = 0.0, dtheta4_y = 0.0, dx4 = 0.0,
                           dx_CRL1 = 0.0, dx_CRL2 = 0.0,
                           dy_CRL1 = 0.0, dy_CRL2 = 0.0,
                           dx_diodeE = 0.0, dy_diodeE = 0.0,
@@ -133,7 +133,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
 
         # reflect from C1
-        self.beam.crystal_mirror(h = self.crystal_h, R = self.crystal_R0, dtheta_x = dtheta1_x, dtheta_y = dtheta1_y)
+        self.beam.crystal_mirror(h = self.crystal_h, R = self.crystal_R0, dtheta_x = dtheta1_x, dtheta_y = dtheta1_y, dx = dx1)
 
         # from C1 to x10
         current_screen = 'x10'
@@ -166,7 +166,7 @@ class cavity_profiler:
                                              x0=dx_diodeC2, y0=dy_diodeC2, d_theta= dtheta2_x)
 
         # reflect from C2
-        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta2_x, dtheta_y=dtheta2_y)
+        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta2_x, dtheta_y=dtheta2_y, dx = dx2)
 
 
 
@@ -202,7 +202,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
 
         # reflect from C3
-        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta3_x, dtheta_y=dtheta3_y)
+        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta3_x, dtheta_y=dtheta3_y,  dx = dx3)
 
         # C3 to x32
         #Ldrift = self.screens['x32'] - self.beam.z_proj
@@ -227,7 +227,7 @@ class cavity_profiler:
         self.beam.propagate(Ldrift)
 
         # reflect from C4
-        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta4_x, dtheta_y=dtheta4_y)
+        self.beam.crystal_mirror(h=self.crystal_h, R = self.crystal_R0, dtheta_x=dtheta4_x, dtheta_y=dtheta4_y, dx = dx4)
 
         # C4 to x42
         current_screen = 'x42'
@@ -253,4 +253,6 @@ class cavity_profiler:
     def get_diodeE_signal(self):
         return self.diode_E.diode_time_record, self.diode_E.diode_signal_record
     def get_diodeC2_signal(self):
-        return self.diode_E.diode_time_record, self.diode_E.diode_signal_record
+        return self.diode_C2.diode_time_record, self.diode_C2.diode_signal_record
+    def get_diodeC2_intensity(self):
+        return self.diode_C2.intensity_record

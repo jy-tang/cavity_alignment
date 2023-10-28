@@ -5,4 +5,4 @@ import matplotlib.pyplot as plt
 CF = cavity_profiler('input/input.yaml')
 
 CF.insert_screen('x31')
-CF.recirculate(dtheta1_x= -400e-9, use_diodeC2=True)
+CF.recirculate(dtheta2_x= -50e-6, use_diodeC2=True)

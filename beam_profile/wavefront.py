@@ -106,7 +106,7 @@ class GaussianWavefront:
 
 
 
-    def crystal_mirror(self, h, R, dtheta_x = 0.0, dtheta_y = 0.0):
+    def crystal_mirror(self, h, R, dtheta_x = 0.0, dtheta_y = 0.0, dx = 0.0):
         """
         R*exp(ih kx)
         :param dtheta:
@@ -114,9 +114,10 @@ class GaussianWavefront:
         """
         self.x0 *= -1
         self.x0 -= h/self.k
+        self.x0 += dx
         self.xp *= -1
-        self.xp += dtheta_x
-        self.yp += dtheta_y
+        self.xp += 2 * dtheta_x
+        self.yp += 2 * dtheta_y
 
         self.A *= R
 

@@ -19,12 +19,16 @@ class Diode:
         self.r = input['position']['radius']
         self.d = input['position']['d']
 
+        # if true, include 100% jitter
+        self.jitter = input['jitter']
+
         self.tstart = 0.0
         self.beam = None
 
         # record for diode signal roundtrip by roundtrip
         self.diode_time_record = np.array([])
         self.diode_signal_record = np.array([])
+        self.intensity_record = np.array([])
 
 
 
@@ -74,6 +78,7 @@ class Diode:
         field[(xmesh - x0) ** 2 + (ymesh - y0) ** 2 > self.r ** 2] = 0
         # get final intensity
         intensity = np.sum(np.abs(field) ** 2) * self.beam.dx * self.beam.dy
+
         return intensity
 
     def record_diode_signal(self, tsep, x0=None, y0=None):
@@ -84,7 +89,6 @@ class Diode:
         # append the signal to the record
         self.diode_time_record = np.append(self.diode_time_record, time)
         self.diode_signal_record = np.append(self.diode_signal_record, signal)
-
         self.update_tstart(self.tstart + tsep)
 
     def reset(self):
@@ -97,6 +101,7 @@ class Diode:
         # record for diode signal roundtrip by roundtrip
         self.diode_time_record = np.array([])
         self.diode_signal_record = np.array([])
+        self.intensity_record = np.array([])
 
 
 class Diode_Bragg(Diode):
@@ -173,7 +178,7 @@ class Diode_Bragg(Diode):
         # get final intensity
         intensity = np.sum(np.abs(fld_transmit)**2)* self.beam.dx * self.beam.dy
         # add 100% noise
-        if jitter_on:
+        if self.jitter:
             intensity *= random.random()
 
         return intensity
@@ -186,5 +191,5 @@ class Diode_Bragg(Diode):
         # append the signal to the record
         self.diode_time_record = np.append(self.diode_time_record, time)
         self.diode_signal_record = np.append(self.diode_signal_record, signal)
-
+        self.intensity_record = np.append(self.intensity_record, [intensity])
         self.update_tstart(self.tstart + tsep)

@@ -46,6 +46,8 @@ diode_E:
     y: 0.0
     radius: 80.0e-6   # hole size
 
+  jitter: False
+
 diode_C2:
   response_curve:
     skew_num: 10.0
@@ -57,3 +59,5 @@ diode_C2:
     x: 0.0           # center position
     y: 0.0
     radius: 80.0e-6   # hole size
+
+  jitter: False
